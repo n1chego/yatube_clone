@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+  Профайл пользователя 
+  {% if author.get_full_name %}
+    {{ author.get_full_name }}
+  {% else %}
+    {{ author.username }}
+  {% endif %}
+{% endblock %}
+
+
+{% block page_info %}
+  <h1>
+    Все посты пользователя 
+    {% if author.get_full_name %}
+      {{ author.get_full_name }}
+    {% else %}
+      {{ author.username }}
+    {% endif %} 
+  </h1>
+  <h3>Всего постов: {{ posts_count }} </h3>
+  {% if not user_is_author %}
+    {% if following %}
+      <a
+        class="btn btn-lg btn-light"
+        href="{% url 'posts:profile_unfollow' author.username %}" role="button"
+      >
+        Отписаться
+      </a>
+    {% else %}
+      <a
+        class="btn btn-lg btn-primary"
+        href="{% url 'posts:profile_follow' author.username %}" role="button"
+      >
+        Подписаться
+      </a>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+
+{% block author_articles %}  
+  <h2>Последние обновления на сайте</h2>
+      <article>
+        {% for post in page_obj %}
+          {% include 'includes/posts_list_display.html' %}
+          {% if post.group %}   
+            <p>
+              <a href="{% url 'posts:group_list' post.group.slug %}">
+                все записи группы {{ post.group.title }}
+              </a>
+            </p>
+          {% endif %}
+          {% if not forloop.last %}<hr>{% endif %}
+        {% endfor %}
+        {% include 'posts/includes/paginator.html' %}
+      </article>
+      <!-- под последним постом нет линии -->
+{% endblock %}
