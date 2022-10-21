@@ -1,9 +1,14 @@
+import shutil
+
 from http import HTTPStatus
-from django.test import TestCase, Client
+from django.test import Client, override_settings, TestCase
+from django.urls import reverse
 
-from posts.models import Post, Group, User
+from posts import consts
+from posts.models import Group, Post, User
 
 
+@override_settings(MEDIA_ROOT=consts.TEMP_MEDIA_ROOT)
 class PostsURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -11,45 +16,92 @@ class PostsURLTests(TestCase):
         # Создаем экземпляр клиента
         cls.guest_client = Client()
         # Создаем пользователя
-        cls.user = User.objects.create_user(username='Auth')
+        cls.user = User.objects.create_user(
+            username=consts.FIRST_USER_USERNAME
+        )
         # Создаем второй клиент
         cls.authorized_client = Client()
         # Авторизуем пользователя
         cls.authorized_client.force_login(cls.user)
         cls.group = Group.objects.create(
-            title='Тест названия группы',
-            slug='unique_slug',
-            description='Тест описания группы'
+            title=consts.GROUP_TITLE,
+            slug=consts.GROUP_SLUG,
+            description=consts.GROUP_DESCRIPTION
         )
         cls.post = Post.objects.create(
             author=cls.user,
             group=cls.group,
-            text='Тестовый текст поста'
+            text=consts.POST_TEXT
         )
         cls.post_of_another_author = Post.objects.create(
-            author=User.objects.create_user(username='author'),
+            author=User.objects.create_user(username=consts.USER_USERNAME),
             group=cls.group,
-            text='Тестовый текст поста'
+            text=consts.POST_TEXT
         )
+        cls.page_url_dict = {
+            'index': reverse(
+                'posts:index'
+            ),
+            'group': reverse(
+                'posts:group_list',
+                kwargs={'slug': f'{cls.group.slug}'}
+            ),
+            'profile': reverse(
+                'posts:profile',
+                kwargs={'username': f'{cls.post.author.username}'}
+            ),
+            'detail': reverse(
+                'posts:post_detail',
+                kwargs={'post_id': f'{cls.post.id}'}
+            ),
+            'create': reverse(
+                'posts:post_create'
+            ),
+            'edit': reverse(
+                'posts:post_edit',
+                kwargs={'post_id': f'{cls.post.id}'}
+            ),
+            'comment': reverse(
+                'posts:add_comment',
+                kwargs={'post_id': f'{cls.post.id}'}
+            ),
+            'follow': reverse(
+                'posts:follow_index'
+            ),
+            'profile_follow': reverse(
+                'posts:profile_follow',
+                kwargs={'username': f'{cls.post.author.username}'}
+            ),
+            'profile_unfollow': reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': f'{cls.post.author.username}'}
+            ),
+            'login_redirect': '/auth/login/?next=',
+        }
         cls.url_key_access_right_dict = {
-            '/': 'all',
-            f'/group/{cls.group.slug}/': 'all',
-            f'/profile/{cls.post.author.username}/': 'all',
-            f'/posts/{cls.post.id}/': 'all',
-            '/create/': 'authorized_only',
-            f'/posts/{cls.post.id}/edit/': 'authorized_author_only',
-            '/follow/': 'authorized_only',
+            cls.page_url_dict['index']: 'all',
+            cls.page_url_dict['group']: 'all',
+            cls.page_url_dict['profile']: 'all',
+            cls.page_url_dict['detail']: 'all',
+            cls.page_url_dict['create']: 'authorized_only',
+            cls.page_url_dict['edit']: 'authorized_author_only',
+            cls.page_url_dict['follow']: 'authorized_only',
         }
         cls.url_to_template_dict = {
-            '/': 'posts/index.html',
-            f'/group/{cls.group.slug}/': 'posts/group_list.html',
-            f'/profile/{cls.post.author.username}/': 'posts/profile.html',
-            f'/posts/{cls.post.id}/': 'posts/post_detail.html',
-            '/create/': 'posts/create_post.html',
-            f'/posts/{cls.post.id}/edit/':
-            'posts/create_post.html',
-            '/follow/': 'posts/follow.html',
+            cls.page_url_dict['index']: 'posts/index.html',
+            cls.page_url_dict['group']: 'posts/group_list.html',
+            cls.page_url_dict['profile']: 'posts/profile.html',
+            cls.page_url_dict['detail']: 'posts/post_detail.html',
+            cls.page_url_dict['create']: 'posts/create_post.html',
+            cls.page_url_dict['edit']: 'posts/create_post.html',
+            cls.page_url_dict['follow']: 'posts/follow.html',
         }
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        # Метод shutil.rmtree удаляет директорию и всё её содержимое
+        shutil.rmtree(consts.TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_posts_urls_exist_and_use_correct_templates(self):
         """Проверка доступности адресов и шаблонов для /posts/<urls>/"""
@@ -82,34 +134,46 @@ class PostsURLTests(TestCase):
         '''Проверка переадресации пользователей
         со страниц, требующих прав доступа.'''
         another_author_post = self.post_of_another_author
+        test_dict = self.page_url_dict
         url_redirect_dict = {
-            '/create/': '/auth/login/?next=/create/',
-            f'/posts/{self.post.id}/edit/':
-            f'/auth/login/?next=/posts/{self.post.id}/edit/',
+            test_dict['create']: (
+                f'{test_dict["login_redirect"]}'
+                f'{test_dict["create"]}'
+            ),
+            test_dict['edit']: (
+                f'{test_dict["login_redirect"]}'
+                f'{test_dict["edit"]}'
+            ),
             f'/posts/{another_author_post.id}/edit/':
             f'/posts/{another_author_post.id}/',
-            f'/posts/{self.post.id}/comment/':
-            f'/auth/login/?next=/posts/{self.post.id}/comment/',
-            '/follow/': '/auth/login/?next=/follow/',
-            f'/profile/{self.post.author.username}/follow/': (
-                '/auth/login/?next=/profile/'
-                f'{self.post.author.username}/follow/'
+            test_dict['comment']: (
+                f'{test_dict["login_redirect"]}'
+                f'{test_dict["comment"]}'
             ),
-            f'/profile/{self.post.author.username}/unfollow/': (
-                '/auth/login/?next=/profile/'
-                f'{self.post.author.username}/unfollow/'
-            )
+            test_dict['follow']: (
+                f'{test_dict["login_redirect"]}'
+                f'{test_dict["follow"]}'
+            ),
+            test_dict['profile_follow']: (
+                f'{test_dict["login_redirect"]}'
+                f'{test_dict["profile_follow"]}'
+            ),
+            test_dict['profile_unfollow']: (
+                f'{test_dict["login_redirect"]}'
+                f'{test_dict["profile_unfollow"]}'
+            ),
         }
         for url, redirect_url in url_redirect_dict.items():
-            if redirect_url == f'/posts/{another_author_post.id}/':
-                response = self.authorized_client.get(url, follow=True)
-            else:
-                response = self.guest_client.get(url, follow=True)
-            self.assertRedirects(
-                response,
-                redirect_url,
-                msg_prefix=f'Ошибка при переадресации от {url}'
-            )
+            with self.subTest(url=url):
+                if redirect_url == f'/posts/{another_author_post.id}/':
+                    response = self.authorized_client.get(url, follow=True)
+                else:
+                    response = self.guest_client.get(url, follow=True)
+                self.assertRedirects(
+                    response,
+                    redirect_url,
+                    msg_prefix=f'Ошибка при переадресации от {url}'
+                )
 
     def test_posts_urls_response_404_at_not_exist_page(self):
         '''Проверка ошибки 404 при переходе по не существующему адресу.'''

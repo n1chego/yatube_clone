@@ -1,12 +1,12 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
+from django.db.models import F, Q
 
 from core.models import CreatedModel
+from .consts import SYMBOLS_LIMIT_FOR_STR_METHOD
 
 
 User = get_user_model()
-# Количество символов возвращаемое при обращении к стоковому методу класса
-SYMBOLS_LIMIT_FOR_STR_METHOD = 15
 
 
 class Post(CreatedModel):
@@ -14,10 +14,6 @@ class Post(CreatedModel):
         verbose_name='Текст поста',
         help_text='Введите текст поста'
     )
-    '''pub_date = models.DateTimeField(
-        'Дата публикации',
-        auto_now_add=True
-    )'''
     author = models.ForeignKey(
         User,
         verbose_name='Автор',
@@ -40,7 +36,7 @@ class Post(CreatedModel):
     )
 
     class Meta:
-        ordering = ['-created']
+        ordering = ('-created',)
 
     def __str__(self):
         return self.text[:SYMBOLS_LIMIT_FOR_STR_METHOD]
@@ -88,13 +84,9 @@ class Comment(CreatedModel):
         verbose_name='Текст комментария',
         help_text='Введите текст комментария'
     )
-    '''created = models.DateTimeField(
-        'Дата публикации',
-        auto_now_add=True
-    )'''
 
     class Meta:
-        ordering = ['-created']
+        ordering = ('-created',)
 
     def __str__(self):
         return self.text[:SYMBOLS_LIMIT_FOR_STR_METHOD]
@@ -113,3 +105,15 @@ class Follow(models.Model):
         related_name='following',
         on_delete=models.CASCADE
     )
+
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                name='not_same',
+                check=~Q(author=F('user')),
+            ),
+            models.UniqueConstraint(
+                fields=['author', 'user'],
+                name='unique_pair',
+            )
+        )

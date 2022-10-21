@@ -1,8 +1,6 @@
 from django.core.paginator import Paginator
 
-
-# Количество отображаемых на странице постов
-MAX_POSTS_DISPLAYED = 10
+from .consts import MAX_POSTS_DISPLAYED
 
 
 def paginator_ops_func(objects_list, request):

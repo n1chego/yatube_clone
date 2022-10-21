@@ -10,23 +10,26 @@
         <div class="form-group mb-2">
           {{ form.text|addclass:"form-control" }}
         </div>
+        <span class="text-danger">{{ form.errors.text }}</span>
         <button type="submit" class="btn btn-primary">Отправить</button>
       </form>
     </div>
   </div>
 {% endif %}
-
-{% for comment in post_comments %}
-  <div class="media mb-4">
-    <div class="media-body">
-      <h5 class="mt-0">
-        <a href="{% url 'posts:profile' comment.author.username %}">
-          {{ comment.author.username }}
-        </a>
-      </h5>
-      <p>
-        {{ comment.text }}
-      </p>
+{% if post_comments %}
+  <span>Комментарии:</span>
+  {% for comment in post_comments %}
+    <div class="media mb-4">
+      <div class="media-body">
+        <h5 class="mt-0">
+          <a href="{% url 'posts:profile' comment.author.username %}">
+            {{ comment.author.username }}
+          </a>
+        </h5>
+        <p>
+          {{ comment.text }}
+        </p>
+      </div>
     </div>
-  </div>
-{% endfor %}
+  {% endfor %}
+{% endif %}

@@ -1,6 +1,7 @@
 from django.test import TestCase
 
-from posts.models import SYMBOLS_LIMIT_FOR_STR_METHOD, Post, Group, User
+from posts import consts
+from posts.models import Group, Post, User
 
 
 def cycle_for_class_verbose_name_tests(tested_class, field_verboses, self):
@@ -27,21 +28,21 @@ class PostModelTest(TestCase):
         super().setUpClass()
         # Создаём тестовую запись в БД
         # и сохраняем созданную запись в качестве переменной класса
-        cls.user = User.objects.create_user(username='auth')
+        cls.user = User.objects.create_user(username=consts.USER_USERNAME)
         cls.group = Group.objects.create(
-            title='Тест названия группы',
-            slug='Тест уникального идентификатора группы',
-            description='Тест описания группы'
+            title=consts.GROUP_TITLE,
+            slug=consts.GROUP_SLUG,
+            description=consts.GROUP_DESCRIPTION
         )
         cls.post = Post.objects.create(
             author=cls.user,
             group=cls.group,
-            text='Тестовый текст поста'
+            text=consts.POST_TEXT
         )
 
     def test_models_have_correct_object_names(self):
         post = self.post
-        expected_object_name = post.text[:SYMBOLS_LIMIT_FOR_STR_METHOD]
+        expected_object_name = post.text[:consts.SYMBOLS_LIMIT_FOR_STR_METHOD]
         self.assertEqual(
             expected_object_name,
             str(post),

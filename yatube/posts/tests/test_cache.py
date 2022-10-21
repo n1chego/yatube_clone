@@ -1,6 +1,7 @@
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 from django.urls import reverse
 
+from posts import consts
 from posts.models import Post, User
 
 
@@ -9,7 +10,9 @@ class PostCacheTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.guest_client = Client()
-        cls.first_user = User.objects.create_user(username='Auth')
+        cls.first_user = User.objects.create_user(
+            username=consts.FIRST_USER_USERNAME
+        )
 
     def test_index_page_cache(self):
         # Ожидаемый текст поста

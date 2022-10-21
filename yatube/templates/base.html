@@ -15,6 +15,36 @@
     <meta name="theme-color" content="#ffffff">
     <!-- Подключен файл со стандартными стилями бустрап -->
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <style>
+      .center {
+      width: 100%; /* Ширина элемента в пикселах */
+      padding: 10px; /* Поля вокруг текста */
+      margin: auto; /* Выравниваем по центру */
+      background: white; /* Цвет фона #DDFFF8*/
+      border-radius: 3px;
+      border: ridge lightgrey;
+      }
+      .btn-group .button {
+        background-color: #d7feea; /* Green */
+        border: 2px solid green;
+        color: #d7feea;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        cursor: pointer;
+        float: left;
+        border-radius: 3px;
+      }
+      .btn-group .button:not(:last-child) {
+        border-right: none; /* Prevent double borders */
+      }
+      .button-hover:hover {
+          background-color: #d7feea;
+          border-radius: 3px;
+      }
+     </style>
     <title>
       {% block page_title %}
       {% endblock %}

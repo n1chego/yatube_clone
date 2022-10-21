@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 
 from .models import Post, Group, Follow, User
-from .forms import PostForm, CommentForm
+from .forms import CommentForm, PostForm
 from .utils import paginator_ops_func
 
 
@@ -29,18 +29,13 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     post_list = author.posts.all()
     posts_count = post_list.count()
-    # Выставляем первичные значения для неавторизованного пользователя
-    following = False
-    user_is_author = False
-    # Проверяем авторизован ли пользователь
-    if request.user.is_authenticated:
-        # Проверяем подписан ли пользователь на автора
-        following = Follow.objects.filter(
-            user=request.user,
-            author=author
-        ).exists()
-        # Проверяем если пользователь и есть автор
-        user_is_author = request.user == author
+    # Проверяем подписан ли пользователь на автора
+    following = request.user.is_authenticated and Follow.objects.filter(
+        user=request.user,
+        author=author
+    ).exists()
+    # Проверяем если пользователь и есть автор
+    user_is_author = request.user.is_authenticated and request.user == author
     page_obj = paginator_ops_func(post_list, request)
     context = dict(
         page_obj=page_obj,
@@ -68,61 +63,42 @@ def post_detail(request, post_id):
 
 @login_required
 def post_create(request):
-    if request.method == 'POST':
-        # Создаём объект формы класса PostForm
-        # и передаём в него полученные данные
-        form = PostForm(
-            request.POST or None,
-            files=request.FILES or None
-        )
-        context = dict(
-            form=form
-        )
-        # Если все данные формы валидны - работаем с "очищенными данными" формы
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.save()
-            return redirect('posts:profile', username=request.user)
-        return render(request, 'posts/create_post.html', context)
-    form = PostForm()
+    form = PostForm(
+        request.POST or None,
+        files=request.FILES or None
+    )
     context = dict(
         form=form
     )
-    return render(request, 'posts/create_post.html', context)
+    # Если все данные формы валидны - работаем с "очищенными данными" формы
+    if not form.is_valid():
+        return render(request, 'posts/create_post.html', context)
+    post = form.save(commit=False)
+    post.author = request.user
+    post.save()
+    return redirect('posts:profile', username=request.user)
 
 
 @login_required
 def post_edit(request, post_id):
     is_edit = True
     post = get_object_or_404(Post, pk=post_id)
-    if request.method == 'POST':
-        # Создаём объект формы класса PostForm
-        # и передаём в него полученные данные
+    if post.author == request.user:
+        # return redirect('posts:post_detail', post_id=post.id)
         form = PostForm(
             instance=post,
             data=request.POST or None,
             files=request.FILES or None
         )
         context = dict(
-            form=form
-        )
-        # Если все данные формы валидны - работаем с "очищенными данными" формы
-        if form.is_valid():
-            post = form.save(commit=False)
-            if post.author == request.user:
-                post.save()
-            return redirect('posts:post_detail', post_id=post.id)
-    # При попытке перейти на страницу редактирования записи не её автором,
-    # возвращает на страницу с подробной информацией о записи
-    if post.author == request.user:
-        form = PostForm(instance=post)
-        context = dict(
             form=form,
             is_edit=is_edit,
             post=post
         )
-        return render(request, 'posts/create_post.html', context)
+        # Если все данные формы валидны - работаем с "очищенными данными" формы
+        if not form.is_valid():
+            return render(request, 'posts/create_post.html', context)
+        post = form.save()
     return redirect('posts:post_detail', post_id=post.id)
 
 
@@ -143,21 +119,10 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):  # Криво, зато сам! Могу переделать.
     '''Страница постов авторов, на которых подписан пользователь'''
-    def sort_func_on_date_created_field(post):
-        '''Дает методу sort доступ к дате создания поста'''
-        return post.created
-    # Выбираем всех авторов на которых подписан пользователь
-    authors_followed = Follow.objects.filter(
-        user=request.user
+    # Выбираем все посты авторов на которых подписан пользователь
+    post_list = Post.objects.filter(
+        author__following__user=request.user
     )
-    post_list = []
-    # Для каждого автора запрашиваем список постов и
-    # добавляем его к общему списку
-    for following in authors_followed:
-        author = following.author
-        post_list.extend(author.posts.all())
-    # Сортируем посты по дате создания
-    post_list.sort(key=sort_func_on_date_created_field, reverse=True)
     page_obj = paginator_ops_func(post_list, request)
     context = dict(
         page_obj=page_obj
@@ -169,6 +134,7 @@ def follow_index(request):  # Криво, зато сам! Могу переде
 def profile_follow(request, username):
     # Подписаться на автора
     author = get_object_or_404(User, username=username)
+    # Получается если есть constraints, этот код убираем?
     following = Follow.objects.filter(
         user=request.user,
         author=author

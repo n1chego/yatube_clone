@@ -1,6 +1,6 @@
-from django.test import TestCase, Client
-from django.urls import reverse
 from django.contrib.auth.forms import UserCreationForm
+from django.test import Client, TestCase
+from django.urls import reverse
 
 
 class UsersPagesTests(TestCase):

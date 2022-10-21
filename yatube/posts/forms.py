@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Post, Comment
+from .models import Comment, Post
 
 
 class PostForm(forms.ModelForm):
@@ -12,12 +12,12 @@ class PostForm(forms.ModelForm):
             'image'
         )
 
-    def validate_not_empty(self):
+    def clean_text(self):
         data = self.cleaned_data['text']
-        if data == '':
+        if len(data) <= 2:
             raise forms.ValidationError(
-                'Напишите что-нибудь, '
-                + 'никому не интересно смотреть на пустые посты!'
+                'Мы понимаем, что краткость - сестра таланта, '
+                + 'но добавьте побольше содержания! (минимум 3 символа)'
             )
         return data
 
@@ -29,11 +29,11 @@ class CommentForm(forms.ModelForm):
             'text',
         )
 
-    def validate_not_empty(self):
+    def clean_text(self):
         data = self.cleaned_data['text']
-        if data == '':
+        if len(data) <= 2:
             raise forms.ValidationError(
-                'Напишите что-нибудь, '
-                + 'никому не интересно смотреть на пустые комментарии!'
+                'Мы понимаем, что краткость - сестра таланта, '
+                + 'но добавьте побольше содержания!(минимум 3 символа)'
             )
         return data

@@ -4,16 +4,22 @@ from django.urls import reverse
 from posts.models import User
 
 
+FIRST_USER_USERNAME = 'Auth'
+USER_USERNAME = 'auth'
+
+
 class UserCreateFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.guest_client = Client()
         # Создаем пользователя
-        cls.first_user = User.objects.create_user(username='Auth')
+        cls.first_user = User.objects.create_user(
+            username=FIRST_USER_USERNAME
+        )
         # Создаём тестовую запись в БД
         # и сохраняем созданную запись в качестве переменной класса
-        cls.user = User.objects.create_user(username='auth')
+        cls.user = User.objects.create_user(username=USER_USERNAME)
 
     def test_create_user(self):
         """Валидная форма создает запись в User."""

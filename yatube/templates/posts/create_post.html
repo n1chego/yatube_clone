@@ -38,6 +38,8 @@
                   <span class="required text-danger" >*</span>                  
                 </label>
                 {{ form.text }}
+                <span class="text-danger">{{ form.errors.text }}</span>
+        
                 <small id="id_text-help" class="form-text text-muted">
                   {% if is_edit %}
                     Текст поста
