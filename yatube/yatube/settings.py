@@ -30,23 +30,28 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '[::1]',
     'testserver',
+    'www.MyFirstWeb.pythonanywhere.com',
+    'MyFirstWeb.pythonanywhere.com',
 ]
 
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
 
 # Application definition
-
 INSTALLED_APPS = [
-    'sorl.thumbnail',
-    'posts.apps.PostsConfig',
-    'users.apps.UsersConfig',
-    'core.apps.CoreConfig',
     'about.apps.AboutConfig',
+    'core.apps.CoreConfig',
+    'debug_toolbar',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'posts.apps.PostsConfig',
+    'sorl.thumbnail',
+    'users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'yatube.urls'
