@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [
     'www.MyFirstWeb.pythonanywhere.com',
     'MyFirstWeb.pythonanywhere.com',
     '62.84.119.229',
+    'neblog.onthewifi.com',
 ]
 
 INTERNAL_IPS = [
